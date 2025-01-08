@@ -26,7 +26,7 @@ const API_KEY =
 function initialLoad() {
   const headers = new Headers({
     "Content-Type": "application/json",
-    "x-api-key": "DEMO-API-KEY",
+    "x-api-key": "API-KEY",
   });
 
   const requestOptions = {
