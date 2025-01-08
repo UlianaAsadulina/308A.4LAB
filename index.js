@@ -23,7 +23,7 @@ const API_KEY =
  * This function should execute immediately.
  */
 
-function initialLoad() {
+async function initialLoad() {
   const headers = new Headers({
     "Content-Type": "application/json",
     "x-api-key": "API-KEY",
@@ -35,13 +35,17 @@ function initialLoad() {
     redirect: "follow",
   };
 
-  fetch(
-    "https://api.thecatapi.com/v1/images/search?size=med&mime_types=jpg&format=json&has_breeds=true&order=RANDOM&page=0&limit=1",
-    requestOptions
-  )
-    .then((response) => response.text())
-    .then((result) => console.log(result))
-    .catch((error) => console.log("error", error));
+  try {
+    const response = await fetch(
+      "https://api.thecatapi.com/v1/breeds",
+      requestOptions
+    );
+    const data = response.json();
+  } catch (err) {
+    console.log(err);
+  }
+
+  // breedSelect = data.
 }
 
 initialLoad();
