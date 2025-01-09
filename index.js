@@ -32,6 +32,8 @@ const requestOptions = {
   redirect: "follow",
 };
 
+let breeds = [];
+
 async function initialLoad() {
   try {
     // Fetch the list of cat breeds
@@ -40,12 +42,12 @@ async function initialLoad() {
       requestOptions
     );
 
-    const data = await response.json();
+    breeds = await response.json();
     // Log the data to ensure the API call worked
-    console.log(data);
+    console.log(breeds);
 
     // Populate the breedSelect element with options
-    data.forEach((breed) => {
+    breeds.forEach((breed) => {
       let option = document.createElement("option");
       option.value = breed.id; // Set the value to the breed ID
       option.textContent = breed.name; // Set the displayed text to the breed name
@@ -74,9 +76,27 @@ initialLoad();
  * - Each new selection should clear, re-populate, and restart the Carousel.
  * - Add a call to this function to the end of your initialLoad function above to create the initial carousel.
  */
-async function retrieveBreedInformation() {
+
+// Create an informational section in the infoDump
+function retrieveBreedInfo() {
   try {
     const breedId = breedSelect.value;
+    console.log(breedId);
+    for (let i = 0; i < breeds.length; i++) {
+      if (breeds[i].id == breedId) {
+        // console.log(breeds[i].description);
+        infoDump.textContent = breeds[i].description;
+      }
+    }
+  } catch (err) {
+    console.log(err);
+  }
+}
+
+async function retrieveBreedImg() {
+  try {
+    const breedId = breedSelect.value;
+
     // Fetch information on the selected breed
     const response = await fetch(
       `https://api.thecatapi.com/v1/images/search?breed_ids=${breedId}&limit=5`, // Limit to 5 images for the carousel
@@ -92,12 +112,14 @@ async function retrieveBreedInformation() {
       let breedImg = Carousel.createCarouselItem(img.url, "...", img.id);
       Carousel.appendCarousel(breedImg);
     });
+    // Create an informational section in the infoDump
+    retrieveBreedInfo();
   } catch (err) {
     console.log(err);
   }
 }
 
-breedSelect.addEventListener("change", retrieveBreedInformation);
+breedSelect.addEventListener("change", retrieveBreedImg);
 /**
  * 3. Fork your own sandbox, creating a new one named "JavaScript Axios Lab."
  */
