@@ -22,25 +22,21 @@ const API_KEY =
  *  - Each option should display text equal to the name of the breed.
  * This function should execute immediately.
  */
-const headers = new Headers({
-  "Content-Type": "application/json",
-  "x-api-key": "API-KEY",
-});
 
-const requestOptions = {
-  headers: headers,
-  redirect: "follow",
+// Reuse the API key for headers
+const headers = {
+  "Content-Type": "application/json",
+  "x-api-key": API_KEY,
 };
 
 let breeds = [];
 
 async function initialLoad() {
   try {
-    // Axios for the list of cat breeds
-    const response = await axios.get(
-      "https://api.thecatapi.com/v1/breeds",
-      requestOptions
-    );
+    // Fetch the list of cat breeds
+    const response = await axios.get("https://api.thecatapi.com/v1/breeds", {
+      headers,
+    });
 
     breeds = await response.data;
     // Log the data to ensure the API call worked
@@ -81,15 +77,23 @@ initialLoad();
 function retrieveBreedInfo() {
   try {
     const breedId = breedSelect.value;
-    console.log(breedId);
-    for (let i = 0; i < breeds.length; i++) {
-      if (breeds[i].id == breedId) {
-        // console.log(breeds[i].description);
-        infoDump.textContent = breeds[i].description;
-      }
+
+    // Find the selected breed's information
+    const selectedBreed = breeds.find((breed) => breed.id === breedId);
+
+    if (selectedBreed) {
+      // Create and append breed information
+      const breedInfo = `
+        <h2>${selectedBreed.name}</h2>
+        <p>${selectedBreed.description}</p>
+        <p><strong>Temperament:</strong> ${selectedBreed.temperament}</p>
+        <p><strong>Origin:</strong> ${selectedBreed.origin}</p>
+        <p><strong>Life Span:</strong> ${selectedBreed.life_span} years</p>
+      `;
+      infoDump.innerHTML = breedInfo;
     }
   } catch (err) {
-    console.log(err);
+    console.error("Error fetching breed info:", err);
   }
 }
 
@@ -99,9 +103,12 @@ async function retrieveBreedImg() {
 
     // Fetch information on the selected breed
     const response = await axios.get(
-      `https://api.thecatapi.com/v1/images/search?breed_ids=${breedId}&limit=5`, // Limit to 5 images for the carousel
-      requestOptions
+      `https://api.thecatapi.com/v1/images/search?breed_ids=${breedId}&limit=5`,
+      {
+        headers,
+      }
     );
+
     const data = await response.data;
 
     console.log(data);
