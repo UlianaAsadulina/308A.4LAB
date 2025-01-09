@@ -22,20 +22,17 @@ const API_KEY =
  *  - Each option should display text equal to the name of the breed.
  * This function should execute immediately.
  */
+const headers = new Headers({
+  "Content-Type": "application/json",
+  "x-api-key": "API-KEY",
+});
+
+const requestOptions = {
+  headers: headers,
+  redirect: "follow",
+};
 
 async function initialLoad() {
-  const headers = new Headers({
-    "Content-Type": "application/json",
-    "x-api-key": "API-KEY",
-  });
-
-  const requestOptions = {
-    headers: headers,
-    redirect: "follow",
-  };
-
-  let breedSelect = document.getElementById("breedSelect");
-
   try {
     // Fetch the list of cat breeds
     const response = await fetch(
@@ -77,7 +74,24 @@ initialLoad();
  * - Each new selection should clear, re-populate, and restart the Carousel.
  * - Add a call to this function to the end of your initialLoad function above to create the initial carousel.
  */
+async function retrieveBreedInformation() {
+  try {
+    const breedId = breedSelect.value;
+    // Fetch information on the selected breed
+    const response = await fetch(
+      `https://api.thecatapi.com/v1/images/search?breed_ids=${breedId}&limit=3`, // Limit to 5 images for the carousel
+      requestOptions
+    );
+    const data = await response.json();
 
+    // Log data for debugging
+    console.log(data);
+  } catch (err) {
+    console.log(err);
+  }
+}
+
+breedSelect.addEventListener("change", retrieveBreedInformation);
 /**
  * 3. Fork your own sandbox, creating a new one named "JavaScript Axios Lab."
  */
