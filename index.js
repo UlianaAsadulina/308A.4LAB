@@ -107,6 +107,7 @@ async function retrieveBreedImg() {
     console.log(data);
     // Clear the carousel
     Carousel.clear();
+    infoDump.textContent = "";
 
     data.forEach((img) => {
       let breedImg = Carousel.createCarouselItem(img.url, "...", img.id);
