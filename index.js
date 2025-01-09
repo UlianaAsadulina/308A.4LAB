@@ -30,22 +30,35 @@ async function initialLoad() {
   });
 
   const requestOptions = {
-    method: "GET",
     headers: headers,
     redirect: "follow",
   };
 
+  let breedSelect = document.getElementById("breedSelect");
+
   try {
+    // Fetch the list of cat breeds
     const response = await fetch(
       "https://api.thecatapi.com/v1/breeds",
       requestOptions
     );
-    const data = response.json();
+
+    const data = await response.json();
+    // Log the data to ensure the API call worked
+    console.log(data);
+
+    // Populate the breedSelect element with options
+    data.forEach((breed) => {
+      let option = document.createElement("option");
+      option.value = breed.id; // Set the value to the breed ID
+      option.textContent = breed.name; // Set the displayed text to the breed name
+      // console.log(option);
+      // console.log(breedSelect);
+      breedSelect.appendChild(option); // Append the option to the select element
+    });
   } catch (err) {
     console.log(err);
   }
-
-  // breedSelect = data.
 }
 
 initialLoad();
