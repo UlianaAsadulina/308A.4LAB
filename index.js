@@ -79,13 +79,19 @@ async function retrieveBreedInformation() {
     const breedId = breedSelect.value;
     // Fetch information on the selected breed
     const response = await fetch(
-      `https://api.thecatapi.com/v1/images/search?breed_ids=${breedId}&limit=3`, // Limit to 5 images for the carousel
+      `https://api.thecatapi.com/v1/images/search?breed_ids=${breedId}&limit=5`, // Limit to 5 images for the carousel
       requestOptions
     );
     const data = await response.json();
 
-    // Log data for debugging
     console.log(data);
+    // Clear the carousel
+    Carousel.clear();
+
+    data.forEach((img) => {
+      let breedImg = Carousel.createCarouselItem(img.url, "...", img.id);
+      Carousel.appendCarousel(breedImg);
+    });
   } catch (err) {
     console.log(err);
   }
