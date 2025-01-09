@@ -36,13 +36,13 @@ let breeds = [];
 
 async function initialLoad() {
   try {
-    // Fetch the list of cat breeds
-    const response = await fetch(
+    // Axios for the list of cat breeds
+    const response = await axios.get(
       "https://api.thecatapi.com/v1/breeds",
       requestOptions
     );
 
-    breeds = await response.json();
+    breeds = await response.data;
     // Log the data to ensure the API call worked
     console.log(breeds);
 
@@ -98,11 +98,11 @@ async function retrieveBreedImg() {
     const breedId = breedSelect.value;
 
     // Fetch information on the selected breed
-    const response = await fetch(
+    const response = await axios.get(
       `https://api.thecatapi.com/v1/images/search?breed_ids=${breedId}&limit=5`, // Limit to 5 images for the carousel
       requestOptions
     );
-    const data = await response.json();
+    const data = await response.data;
 
     console.log(data);
     // Clear the carousel
