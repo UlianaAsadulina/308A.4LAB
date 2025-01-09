@@ -31,6 +31,35 @@ const headers = {
 
 let breeds = [];
 
+// Axios Interceptors to log request and response time
+axios.interceptors.request.use(
+  (config) => {
+    config.metadata = { startTime: Date.now() }; // Record the start time
+    console.log(`[Request Started] URL: ${config.url}`);
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
+  }
+);
+
+axios.interceptors.response.use(
+  (response) => {
+    const elapsedTime = Date.now() - response.config.metadata.startTime; // Calculate elapsed time
+    console.log(`[Response Received] URL: ${response.config.url}`);
+    console.log(`[Time Elapsed] ${elapsedTime}ms`);
+    return response;
+  },
+  (error) => {
+    if (error.config && error.config.metadata) {
+      const elapsedTime = Date.now() - error.config.metadata.startTime;
+      console.log(`[Error Received] URL: ${error.config.url}`);
+      console.log(`[Time Elapsed] ${elapsedTime}ms`);
+    }
+    return Promise.reject(error);
+  }
+);
+
 async function initialLoad() {
   try {
     // Fetch the list of cat breeds
@@ -40,15 +69,14 @@ async function initialLoad() {
 
     breeds = await response.data;
     // Log the data to ensure the API call worked
-    console.log(breeds);
+    // console.log(breeds);
 
     // Populate the breedSelect element with options
     breeds.forEach((breed) => {
       let option = document.createElement("option");
-      option.value = breed.id; // Set the value to the breed ID
+      option.setAttribute("value", breed.id); // Set the value to the breed ID
       option.textContent = breed.name; // Set the displayed text to the breed name
-      // console.log(option);
-      // console.log(breedSelect);
+
       breedSelect.appendChild(option); // Append the option to the select element
     });
   } catch (err) {
@@ -103,7 +131,7 @@ async function retrieveBreedImg() {
 
     // Fetch information on the selected breed
     const response = await axios.get(
-      `https://api.thecatapi.com/v1/images/search?breed_ids=${breedId}&limit=5`,
+      `https://api.thecatapi.com/v1/images/search?breed_ids=${breedId}&limit=6`,
       {
         headers,
       }
@@ -111,7 +139,7 @@ async function retrieveBreedImg() {
 
     const data = await response.data;
 
-    console.log(data);
+    // console.log(data);
     // Clear the carousel
     Carousel.clear();
     infoDump.textContent = "";
@@ -120,6 +148,10 @@ async function retrieveBreedImg() {
       let breedImg = Carousel.createCarouselItem(img.url, "...", img.id);
       Carousel.appendCarousel(breedImg);
     });
+
+    //Activate buttons on the carousel
+    Carousel.start();
+
     // Create an informational section in the infoDump
     retrieveBreedInfo();
   } catch (err) {
