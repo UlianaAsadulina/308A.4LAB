@@ -14,69 +14,101 @@ const getFavouritesBtn = document.getElementById("getFavouritesBtn");
 const API_KEY =
   "live_V1hbANkwoLecakcBbdq9WVvBt2jlOO1R70PJ8n0ch66XNgYHuI03Wa9fsOdosiTI";
 
+// 1. Create an async function "initialLoad"
+// 2. Create an event handler for breedSelect
+// 3. Fork your own sandbox, creating a new one named "JavaScript Axios Lab."
+
 /**
- * 1. Create an async function "initialLoad" that does the following:
- * - Retrieve a list of breeds from the cat API using fetch().
- * - Create new <options> for each of these breeds, and append them to breedSelect.
- *  - Each option should have a value attribute equal to the id of the breed.
- *  - Each option should display text equal to the name of the breed.
- * This function should execute immediately.
+ * 4. Change all of your fetch() functions to axios!
+  
  */
 
-// Reuse the API key for headers
-const headers = {
-  "Content-Type": "application/json",
-  "x-api-key": API_KEY,
-};
+const axiosInstance = axios.create({
+  baseURL: "https://api.thecatapi.com/v1",
+  headers: {
+    "x-api-key": API_KEY, // API key for authentication
+  },
+});
 
 let breeds = [];
 
-// Axios Interceptors to log request and response time
-axios.interceptors.request.use(
-  (config) => {
-    config.metadata = { startTime: Date.now() }; // Record the start time
-    console.log(`[Request Started] URL: ${config.url}`);
-    return config;
-  },
-  (error) => {
-    return Promise.reject(error);
-  }
-);
+/**
+ * 5. Add axios interceptors to log the time between request and response to the console.
 
-axios.interceptors.response.use(
+ */
+
+//Add axios interceptors for start point.
+
+axiosInstance.interceptors.request.use((request) => {
+  request.metadata = request.metadata || {};
+  request.metadata.startTime = new Date().getTime();
+
+  // reset the progress with each request.
+  progressBar.style.width = "0%";
+
+  //In your request interceptor, set the body element's cursor style to "progress."
+  document.body.style.cursor = "progress";
+
+  return request;
+});
+
+//Add axios interceptors to log the time between request and response to the console.
+
+axiosInstance.interceptors.response.use(
   (response) => {
-    const elapsedTime = Date.now() - response.config.metadata.startTime; // Calculate elapsed time
-    console.log(`[Response Received] URL: ${response.config.url}`);
-    console.log(`[Time Elapsed] ${elapsedTime}ms`);
+    response.config.metadata.endTime = new Date().getTime();
+    //console.log(`Recieve data at ${response.config.metadata.endTime}`);
+    response.config.metadata.durationInMS =
+      response.config.metadata.endTime - response.config.metadata.startTime;
+
+    console.log(
+      `Request took ${response.config.metadata.durationInMS} milliseconds.`
+    );
+
+    //In your response interceptor, remove the progress cursor style from the body element.
+    document.body.style.cursor = "auto";
+
     return response;
   },
   (error) => {
-    if (error.config && error.config.metadata) {
-      const elapsedTime = Date.now() - error.config.metadata.startTime;
-      console.log(`[Error Received] URL: ${error.config.url}`);
-      console.log(`[Time Elapsed] ${elapsedTime}ms`);
-    }
-    return Promise.reject(error);
+    error.config.metadata.endTime = new Date().getTime();
+    error.config.metadata.durationInMS =
+      error.config.metadata.endTime - error.config.metadata.startTime;
+
+    console.log(
+      `Request took ${error.config.metadata.durationInMS} milliseconds.`
+    );
+    throw error;
   }
 );
+
+// Update the progress of the request
+function updateProgress(progressEvent) {
+  //console.log(progressEvent);
+  const percentage = Math.round(
+    (progressEvent.loaded * 100) / progressEvent.total
+  );
+  console.log(percentage + "%");
+
+  //modify progressBar width style property to align with the request progress.
+  progressBar.style.width = percentage + "%";
+}
 
 async function initialLoad() {
   try {
     // Fetch the list of cat breeds
-    const response = await axios.get("https://api.thecatapi.com/v1/breeds", {
-      headers,
+
+    const response = await axiosInstance.get("/breeds", {
+      onDownloadProgress: updateProgress, // Attach the progress function
     });
 
     breeds = await response.data;
-    // Log the data to ensure the API call worked
-    // console.log(breeds);
 
     // Populate the breedSelect element with options
     breeds.forEach((breed) => {
       let option = document.createElement("option");
       option.setAttribute("value", breed.id); // Set the value to the breed ID
       option.textContent = breed.name; // Set the displayed text to the breed name
-
       breedSelect.appendChild(option); // Append the option to the select element
     });
   } catch (err) {
@@ -85,21 +117,6 @@ async function initialLoad() {
 }
 
 initialLoad();
-
-/**
- * 2. Create an event handler for breedSelect that does the following:
- * - Retrieve information on the selected breed from the cat API using fetch().
- *  - Make sure your request is receiving multiple array items!
- *  - Check the API documentation if you're only getting a single object.
- * - For each object in the response array, create a new element for the carousel.
- *  - Append each of these new elements to the carousel.
- * - Use the other data you have been given to create an informational section within the infoDump element.
- *  - Be creative with how you create DOM elements and HTML.
- *  - Feel free to edit index.html and styles.css to suit your needs, but be careful!
- *  - Remember that functionality comes first, but user experience and design are important.
- * - Each new selection should clear, re-populate, and restart the Carousel.
- * - Add a call to this function to the end of your initialLoad function above to create the initial carousel.
- */
 
 // Create an informational section in the infoDump
 function retrieveBreedInfo() {
@@ -112,17 +129,35 @@ function retrieveBreedInfo() {
     if (selectedBreed) {
       // Create and append breed information
       const breedInfo = `
-        <h2>${selectedBreed.name}</h2>
-        <p>${selectedBreed.description}</p>
-        <p><strong>Temperament:</strong> ${selectedBreed.temperament}</p>
-        <p><strong>Origin:</strong> ${selectedBreed.origin}</p>
-        <p><strong>Life Span:</strong> ${selectedBreed.life_span} years</p>
+          <h2>${selectedBreed.name}</h2>
+          <p>${selectedBreed.description}</p>
+          <p><strong>Origin:</strong> ${selectedBreed.origin}</p>
+          <p><strong>Temperament:</strong> ${selectedBreed.temperament}</p>          
+          <p><strong>Life Span:</strong> ${selectedBreed.life_span} years</p>
       `;
       infoDump.innerHTML = breedInfo;
     }
   } catch (err) {
-    console.error("Error fetching breed info:", err);
+    console.log(err);
   }
+}
+
+function clearInfo() {
+  infoDump.innerHTML = "";
+}
+
+function addArrayOfImages(array) {
+  // Clear the carousel
+  Carousel.clear();
+
+  //Add all img
+  array.forEach((img) => {
+    let newImg = Carousel.createCarouselItem(img.url, "...", img.id);
+    Carousel.appendCarousel(newImg);
+  });
+
+  //Activate buttons on the carousel
+  Carousel.start();
 }
 
 async function retrieveBreedImg() {
@@ -130,29 +165,24 @@ async function retrieveBreedImg() {
     const breedId = breedSelect.value;
 
     // Fetch information on the selected breed
-    const response = await axios.get(
-      `https://api.thecatapi.com/v1/images/search?breed_ids=${breedId}&limit=6`,
-      {
-        headers,
-      }
-    );
+
+    const response = await axiosInstance.get("/images/search", {
+      params: {
+        breed_ids: breedId, // Pass the breed ID dynamically
+        limit: 6, // Limit the number of results pictures
+      },
+      onDownloadProgress: updateProgress, // Attach the progress function
+    });
 
     const data = await response.data;
 
-    // console.log(data);
-    // Clear the carousel
-    Carousel.clear();
-    infoDump.textContent = "";
+    // Clear the info section
+    clearInfo();
 
-    data.forEach((img) => {
-      let breedImg = Carousel.createCarouselItem(img.url, "...", img.id);
-      Carousel.appendCarousel(breedImg);
-    });
+    //Add images to Carousel
+    addArrayOfImages(data);
 
-    //Activate buttons on the carousel
-    Carousel.start();
-
-    // Create an informational section in the infoDump
+    // Call for information about selected breed
     retrieveBreedInfo();
   } catch (err) {
     console.log(err);
@@ -160,24 +190,6 @@ async function retrieveBreedImg() {
 }
 
 breedSelect.addEventListener("change", retrieveBreedImg);
-/**
- * 3. Fork your own sandbox, creating a new one named "JavaScript Axios Lab."
- */
-/**
- * 4. Change all of your fetch() functions to axios!
- * - axios has already been imported for you within index.js.
- * - If you've done everything correctly up to this point, this should be simple.
- * - If it is not simple, take a moment to re-evaluate your original code.
- * - Hint: Axios has the ability to set default headers. Use this to your advantage
- *   by setting a default header with your API key so that you do not have to
- *   send it manually with all of your requests! You can also set a default base URL!
- */
-/**
- * 5. Add axios interceptors to log the time between request and response to the console.
- * - Hint: you already have access to code that does this!
- * - Add a console.log statement to indicate when requests begin.
- * - As an added challenge, try to do this on your own without referencing the lesson material.
- */
 
 /**
  * 6. Next, we'll create a progress bar to indicate the request is in progress.
@@ -200,6 +212,7 @@ breedSelect.addEventListener("change", retrieveBreedImg);
  * - In your request interceptor, set the body element's cursor style to "progress."
  * - In your response interceptor, remove the progress cursor style from the body element.
  */
+
 /**
  * 8. To practice posting data, we'll create a system to "favourite" certain images.
  * - The skeleton of this function has already been created for you.
@@ -211,8 +224,64 @@ breedSelect.addEventListener("change", retrieveBreedImg);
  *   you delete that favourite using the API, giving this function "toggle" functionality.
  * - You can call this function by clicking on the heart at the top right of any image.
  */
+
+const user = "Uliana";
+
+async function allFavImg() {
+  try {
+    const response = await axiosInstance.get("/favourites", {
+      params: {
+        sub_id: user,
+        limit: 100, // Max limit in API
+        order: "DESC", // Order by newest first
+      },
+      onDownloadProgress: updateProgress,
+    });
+
+    const favorites = await response.data;
+    //console.log(favorites);
+
+    return favorites;
+  } catch (err) {
+    console.log(err);
+  }
+}
+
 export async function favourite(imgId) {
-  // your code here
+  try {
+    const load = {
+      image_id: imgId,
+      sub_id: user,
+    };
+
+    const favorites = await allFavImg();
+
+    // Check if the image is already favorited
+    const favorite = favorites.find((fav) => fav.image_id === imgId);
+
+    if (favorite) {
+      // send DELETE request
+      console.log(
+        `Image already in Favorites. Deleting favorite with ID: ${favorite.id}`
+      );
+
+      const deleteResponse = await axiosInstance.delete(
+        `/favourites/${favorite.id}`
+      );
+      const dataDelete = await deleteResponse.data;
+
+      alert("You deleted this picture from Favorite");
+    } else {
+      // send POST request
+      console.log(`Image not favorited. Adding to favorites.`);
+      const postResponse = await axiosInstance.post("/favourites", load);
+      const dataPost = await postResponse.data;
+
+      alert("You added this picture to Favorite");
+    }
+  } catch (err) {
+    console.log(err);
+  }
 }
 
 /**
@@ -224,6 +293,32 @@ export async function favourite(imgId) {
  *    If that isn't in its own function, maybe it should be so you don't have to
  *    repeat yourself in this section.
  */
+
+async function getFavorites() {
+  try {
+    const favorites = await allFavImg();
+
+    Carousel.clear();
+    clearInfo();
+
+    //Add all favorites img to carousel
+    favorites.forEach((img) => {
+      let newImg = Carousel.createCarouselItem(
+        img.image.url,
+        "...",
+        img.image.id
+      );
+      Carousel.appendCarousel(newImg);
+    });
+
+    //Activate buttons on the carousel
+    Carousel.start();
+  } catch (err) {
+    console.log(err);
+  }
+}
+
+getFavouritesBtn.addEventListener("click", getFavorites);
 
 /**
  * 10. Test your site, thoroughly!
